@@ -6,6 +6,7 @@
 //  radius 円の半径
 //  centerX, centerY 中心座標(X, Y)
 //  color 描画色（B,G,Rの配列）
+
 void drawFilledCircle(unsigned char* buff, int width, int height, int radius, int centerX, int centerY, unsigned char color[3])
 {
 	const int squaredRadius = radius * radius; // 半径の二乗
@@ -28,6 +29,26 @@ void drawFilledCircle(unsigned char* buff, int width, int height, int radius, in
 	}
 }
 
+void drawFilledSquare(unsigned char* buff, int width, int height, int halfpitch, int centerX, int centerY, unsigned char color[3])
+{
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			if (centerX - halfpitch < x && x < centerX + halfpitch && centerY - halfpitch < y && y < centerY + halfpitch)
+			{
+				*buff++ = color[0];  // B
+				*buff++ = color[1];  // G
+				*buff++ = color[2];  // R
+			}
+			else
+			{
+				buff += 3;	// 現在のX,Yで示す位置は円の外側（色は置かず次のピクセルに移る）
+			}
+		}
+	}
+}
+
 int centerX; // 円の中心座標X
 int centerY; // 円の中心座標Y
 int radius;  // 円の半径
@@ -41,13 +62,82 @@ void FrameBufferEmulator::initUser()
 	radius = 100; // 初期の半径
 }
 
+
+int Block[100] = { 1, 3, 1, 4, 2, 4 };
+
+void sortblock()
+{
+	int nextBlock[100] = {};
+	int add = 0;
+	// ブロックを一つずつ引いて最後に足す
+	for (int i = 0; i < 100; i++)
+	{
+		if (Block[i] > 0)
+		{
+			Block[i]--;
+			add++;
+		}
+		else
+		{
+			Block[i] = add;
+			break;
+		}
+	}
+
+	// 次のブロックの配置を計算
+	int j = 0;
+	for (int i = 0; i < 100; i++)
+	{
+		if (Block[i] > 0)
+		{
+			nextBlock[j] = Block[i];
+			j++;
+		}
+	}
+
+	// もともとの変数に代入する
+	for (int i = 0; i < 100; i++)
+	{
+		Block[i] = nextBlock[i];
+	}
+}
+
+bool sortcheck()
+{
+	bool isSortfinish = true;
+
+	// 並びが正しいか判断する
+	for (int i = 0; i < 100; i++)
+	{
+		if (Block[i] == 0)
+		{
+			break;
+		}
+		else if (Block[i] != i + 1)
+		{
+			isSortfinish = false;
+			break;
+		}
+	}
+
+	return isSortfinish;
+}
+
 // 描画処理（毎フレーム呼び出される）
 void FrameBufferEmulator::drawUser(unsigned char* buff, int mode, int keyLevel, int keyTrigger)
 {
 	unsigned char color[3] = { 10, 200, 0 }; // B, G, R
-
-	if (keyTrigger == SDLK_UP) { // 上矢印キーが押されたら
-		radius++;  // 半径を大きくする
+	bool isFinish;
+	isFinish = sortcheck();
+	if (!isFinish) {
+		sortblock();
 	}
-	drawFilledCircle(buff, width, height, radius, centerX, centerY, color); // 円を描画する
+
+	for (int i = 0; i < 100; i++)
+	{
+		for (int j = 0; j < Block[i]; j++)
+		{
+			drawFilledSquare(buff, width, height, 18, i * 40 + 20, j * 40 + 100, color); // 円を描画する
+		}
+	}
 }
