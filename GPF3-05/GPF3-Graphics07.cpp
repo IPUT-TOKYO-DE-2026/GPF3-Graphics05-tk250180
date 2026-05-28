@@ -65,9 +65,8 @@ void FrameBufferEmulator::initUser()
 
 int Block[100] = { 1, 3, 1, 4, 2, 4 };
 
-void sortblock()
+void sortblock1()
 {
-	int nextBlock[100] = {};
 	int add = 0;
 	// ブロックを一つずつ引いて最後に足す
 	for (int i = 0; i < 100; i++)
@@ -84,6 +83,11 @@ void sortblock()
 		}
 	}
 
+}
+
+void sortblock2()
+{
+	int nextBlock[100] = {};
 	// 次のブロックの配置を計算
 	int j = 0;
 	for (int i = 0; i < 100; i++)
@@ -123,14 +127,25 @@ bool sortcheck()
 	return isSortfinish;
 }
 
+bool isSortfinish = false;
+int Mystate = 1;
+
 // 描画処理（毎フレーム呼び出される）
 void FrameBufferEmulator::drawUser(unsigned char* buff, int mode, int keyLevel, int keyTrigger)
 {
 	unsigned char color[3] = { 10, 200, 0 }; // B, G, R
-	bool isFinish;
-	isFinish = sortcheck();
-	if (!isFinish) {
-		sortblock();
+
+	if (!isSortfinish && keyTrigger == SDLK_RIGHT)
+	{
+		if (Mystate == 1) {
+			sortblock1();
+			Mystate = 2;
+		}
+		else if (Mystate == 2) {
+			sortblock2();
+			Mystate = 1;
+			isSortfinish = sortcheck();
+		}
 	}
 
 	for (int i = 0; i < 100; i++)
